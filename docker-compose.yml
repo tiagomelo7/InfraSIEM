@@ -1,0 +1,108 @@
+version: "3.9"
+
+networks:
+  observability:
+    driver: bridge
+
+volumes:
+  grafana-data:
+  prometheus-data:
+  loki-data:
+
+services:
+  # --- MÉTRICAS ---
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    networks: [observability]
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    pid: host
+    network_mode: host
+    command:
+      - "--path.rootfs=/host"
+    volumes:
+      - "/:/host:ro,rslave"
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:rw"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker/:/var/lib/docker:ro"
+    networks: [observability]
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    command: ["--config.file=/etc/alertmanager/alertmanager.yml"]
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    networks: [observability]
+
+  # --- LOGS ---
+  loki:
+    image: grafana/loki:2.9.8
+    container_name: loki
+    command: ["-config.file=/etc/loki/config.yml"]
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    networks: [observability]
+
+  promtail:
+    image: grafana/promtail:2.9.8
+    container_name: promtail
+    command: ["-config.file=/etc/promtail/config.yml"]
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/log:/var/log:ro                  # logs do host
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro # logs dos containers
+      - /etc/machine-id:/etc/machine-id:ro
+    networks: [observability]
+    depends_on: [loki]
+
+  # --- VISUALIZAÇÃO ---
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on: [prometheus, loki]
+    networks: [observability]
+
+  # --- NOTIFICAÇÃO (E-MAIL DE TESTE) ---
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "8025:8025" # UI web do MailHog
+      - "1025:1025" # SMTP
+    networks: [observability]
