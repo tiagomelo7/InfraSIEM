@@ -5,6 +5,9 @@ Infraestrutura SIEM para a disciplina de Monitoramento e Análise de Ameaças mi
 
 Após subir os containers com `docker compose up -d`, é possível verificar se os serviços estão rodando corretamente utilizando os comandos abaixo:
 
+## Windows
+
+Caso estejam usando o S.O Windows e 
 ### Comandos básicos de checagem
 
 ```bash
