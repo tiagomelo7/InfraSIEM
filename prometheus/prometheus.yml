@@ -1,14 +1,20 @@
 global:
   scrape_interval: 15s
-  evaluation_interval: 15s
+  # Evaluate rules more frequently so alerts can transition to firing/resolved faster.
+  evaluation_interval: 5s
 
 alerting:
   alertmanagers:
     - static_configs:
         - targets: ['alertmanager:9093']
 
+rule_files:
+  - /etc/prometheus/alerts.yml
+
 scrape_configs:
   - job_name: 'prometheus'
+    # faster scrape for Prometheus process itself
+    scrape_interval: 10s
     static_configs:
       - targets: ['localhost:9090']
 
@@ -23,4 +29,27 @@ scrape_configs:
   - job_name: 'alertmanager'
     static_configs:
       - targets: ['alertmanager:9093']
+
+  - job_name: 'grafana'
+    # scrape Grafana a cada 10s (mais responsivo)
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['grafana:3000']
+
+  - job_name: 'loki'
+    # Loki é crítico para logs: scrape mais frequentemente
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['loki:3100']
+
+  - job_name: 'promtail'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['promtail:9080']
+
+  - job_name: 'mailhog'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['mailhog:8025']
+
 

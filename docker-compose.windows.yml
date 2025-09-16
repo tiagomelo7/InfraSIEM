@@ -12,7 +12,7 @@ volumes:
 services:
   # --- MÉTRICAS ---
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.47.0
     container_name: prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -30,7 +30,7 @@ services:
       - "host.docker.internal:host-gateway"
 
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.7.0
     container_name: node-exporter
     ports:
       - "9100:9100"
@@ -42,7 +42,7 @@ services:
 
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
     container_name: cadvisor
     ports:
       - "8080:8080"
@@ -54,7 +54,7 @@ services:
     networks: [observability]
 
   alertmanager:
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.25.0
     container_name: alertmanager
     command: ["--config.file=/etc/alertmanager/alertmanager.yml"]
     ports:
@@ -89,7 +89,7 @@ services:
 
   # --- VISUALIZAÇÃO ---
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:9.5.0
     container_name: grafana
     ports:
       - "3000:3000"
@@ -100,14 +100,17 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on: [prometheus, loki]
     networks: [observability]
 
   # --- NOTIFICAÇÃO (E-MAIL DE TESTE) ---
   mailhog:
-    image: mailhog/mailhog:latest
+    image: mailhog/mailhog:v1.0.1
     container_name: mailhog
     ports:
       - "8025:8025" # UI web do MailHog
       - "1025:1025" # SMTP
     networks: [observability]
+
+  # webhook service removed: using external webhook.site instead of local webhook container

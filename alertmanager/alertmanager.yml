@@ -1,5 +1,17 @@
 route:
   receiver: "mailhog"
+  routes:
+    # Send all critical alerts to webhook_receiver as well
+    - matchers:
+        - "severity = \"critical\""
+      receiver: "webhook_receiver"
+    # Route InstanceDown alerts for any target with alertname InstanceDown OR job=site-example
+    - matchers:
+        - "alertname = \"InstanceDown\""
+      receiver: "webhook_receiver"
+    - matchers:
+        - "job = \"site-example\""
+      receiver: "webhook_receiver"
 
 receivers:
   - name: "mailhog"
@@ -9,3 +21,8 @@ receivers:
         smarthost: "mailhog:1025"
         require_tls: false
         html: '{{ template "email.default.html" . }}'
+
+  - name: "webhook_receiver"
+    webhook_configs:
+      - url: "https://webhook.site/ac2da273-73ca-495d-bafb-bf98e943ffca" # Replace with your actual webhook endpoint
+        send_resolved: true
