@@ -36,7 +36,12 @@ Set-Location -LiteralPath "C:\Users\<seu_usuario>\OneDrive\Área de Trabalho\Inf
 No Linux/macOS (bash):
 
 ```bash
+# Se estiver em Linux use o compose para Linux (se fornecido) ou o script de shell
+# Por padrão o script detecta o compose a usar
 ./scripts.sh install
+
+# Como alternativa (usar o docker-compose diretamente):
+docker compose -f docker-compose.linux.yml up -d
 ```
 
 ## Verificar serviços (Windows)
@@ -70,6 +75,27 @@ Invoke-RestMethod -Uri http://localhost:9090/api/v1/alerts | ConvertTo-Json -Dep
 
 # ver alerts no Alertmanager
 Invoke-RestMethod -Uri http://localhost:9093/api/v2/alerts | ConvertTo-Json -Depth 4
+```
+
+## Verificar serviços (Linux / macOS)
+
+Comandos equivalentes usando curl / jq:
+
+```bash
+# Prometheus
+curl -s http://localhost:9090/-/healthy
+curl -s http://localhost:9090/-/ready
+curl -s http://localhost:9090/api/v1/targets | jq .
+
+# Grafana
+curl -s http://localhost:3000/login
+
+# Loki
+curl -s http://localhost:3100/ready
+
+# Alertmanager
+curl -s http://localhost:9093/-/healthy
+curl -s http://localhost:9093/api/v2/alerts | jq .
 ```
 
 ## Configurar webhook (Alertmanager)
@@ -131,6 +157,16 @@ Invoke-RestMethod -Method Post -ContentType 'application/json' -Body $payload -U
 ```
 
 Abra o inbox do webhook (ex.: webhook.site) para ver as requisições de `firing` e `resolved` (caso `send_resolved: true` esteja ativado).
+
+Exemplo (curl) — enviar um alerta manual ao Alertmanager:
+
+```bash
+cat <<EOF > /tmp/alert.json
+[{"labels":{"alertname":"InstanceDown","instance":"example-site:80","job":"site-example"},"annotations":{"summary":"Teste: alvo indisponível"},"startsAt":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}]
+EOF
+
+curl -s -XPOST -H 'Content-Type: application/json' --data-binary @/tmp/alert.json http://localhost:9093/api/v1/alerts
+```
 
 ## Troubleshooting rápido
 
