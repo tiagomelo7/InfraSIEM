@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: 'Site dashboards'
+    orgId: 1
+    folder: 'Site Monitoring'
+    type: file
+    disableDeletion: false
+    options:
+      path: /var/lib/grafana/dashboards

@@ -3,12 +3,97 @@ groups:
     rules:
       - alert: InstanceDown
         expr: up == 0
-        for: 1m
+        # Be more responsive to instance outages (shorter for)
+        for: 20s
         labels:
           severity: critical
         annotations:
           summary: "Alvo indisponível"
           description: "O alvo {{ $labels.job }} ({{ $labels.instance }}) está off há mais de 1 minuto."
+
+      # Specific service example (keeps same alertname so Alertmanager routes match)
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: grafana
+        annotations:
+          summary: "Grafana indisponível"
+          description: "Grafana ({{ $labels.instance }}) está off há mais de 30s."
+
+      # Per-service fast detection rules
+      - alert: ServiceDown_prometheus
+        expr: up{job="prometheus"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: prometheus
+        annotations:
+          summary: "Prometheus indisponível"
+          description: "Prometheus ({{ $labels.instance }}) está off há mais de 30s."
+
+      - alert: ServiceDown_grafana
+        expr: up{job="grafana"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: grafana
+        annotations:
+          summary: "Grafana indisponível"
+          description: "Grafana ({{ $labels.instance }}) está off há mais de 30s."
+
+      - alert: ServiceDown_loki
+        expr: up{job="loki"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: loki
+        annotations:
+          summary: "Loki indisponível"
+          description: "Loki ({{ $labels.instance }}) está off há mais de 30s."
+
+      - alert: ServiceDown_promtail
+        expr: up{job="promtail"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: promtail
+        annotations:
+          summary: "Promtail indisponível"
+          description: "Promtail ({{ $labels.instance }}) está off há mais de 30s."
+
+      - alert: ServiceDown_mailhog
+        expr: up{job="mailhog"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: mailhog
+        annotations:
+          summary: "MailHog indisponível"
+          description: "MailHog ({{ $labels.instance }}) está off há mais de 30s."
+
+      # ServiceDown_webhook rule removed because the stack no longer runs a local webhook service
+
+      - alert: ServiceDown_cadvisor
+        expr: up{job="cadvisor"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: cadvisor
+        annotations:
+          summary: "cAdvisor indisponível"
+          description: "cAdvisor ({{ $labels.instance }}) está off há mais de 30s."
+
+      - alert: ServiceDown_node_exporter
+        expr: up{job="node-exporter"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: node-exporter
+        annotations:
+          summary: "Node Exporter indisponível"
+          description: "Node Exporter ({{ $labels.instance }}) está off há mais de 30s."
 
       - alert: HighContainerCPU
         expr: rate(container_cpu_usage_seconds_total{image!=""}[5m]) > 0.5
